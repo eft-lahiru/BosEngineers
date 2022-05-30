@@ -37,7 +37,9 @@ jobs:
   deploy-to-staging:
     needs: build-app
     runs-on: windows-latest
-    environment: Staging
+    environment: 
+      name : Staging
+      url: https://staging-bosengineers.azurewebsites.net/
     steps:
 
     - uses: actions/checkout@main  
@@ -66,7 +68,9 @@ jobs:
   deploy-to-production:
     needs: deploy-to-staging
     runs-on: windows-latest
-    environment: Production
+    environment: 
+      name: Production
+      url: https://prod-bosengineers.azurewebsites.net/
     steps:
 
     - uses: actions/checkout@main  
