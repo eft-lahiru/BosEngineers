@@ -1,0 +1,97 @@
+name: CI-CD
+
+on: [push]
+  
+env:
+  # Common
+  NUGET_VERSION: '5.8.x'  
+  AZURE_WEBAPP_PACKAGE_PATH: './published'
+  
+  # Staging
+  AZURE_STG_WEBAPP_NAME: staging-bosengineers 
+  
+  # Production
+  AZURE_PRD_WEBAPP_NAME: prod-bosengineers   
+       
+jobs:
+  build-app:
+    runs-on: windows-latest
+    steps:
+
+    - uses: actions/checkout@main  
+    
+    - name: Install Nuget
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-version: ${{env.NUGET_VERSION}}
+        
+    - name: NuGet to restore dependencies as well as project-specific tools that are specified in the project file
+      run: nuget restore
+  
+    - name: Build application in release configuration
+      run: dotnet build --no-restore -c Release 
+    
+    - name: Publish artifacts in release configuration
+      run: dotnet publish --no-build -c Release -o ./published
+      
+  deploy-to-staging:
+    needs: build-app
+    runs-on: windows-latest
+    environment: Staging
+    steps:
+
+    - uses: actions/checkout@main  
+    
+    - name: Install Nuget
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-version: ${{env.NUGET_VERSION}}
+        
+    - name: NuGet to restore dependencies as well as project-specific tools that are specified in the project file
+      run: nuget restore
+  
+    - name: Build application in release configuration
+      run: dotnet build --no-restore -c Release 
+    
+    - name: Publish artifacts in release configuration
+      run: dotnet publish --no-build -c Release -o ./published
+            
+    - name: Deploy application to staging environment
+      uses: azure/webapps-deploy@v2
+      with: 
+        app-name: ${{ env.AZURE_PRD_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+        package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}'
+    
+  deploy-to-production:
+    needs: deploy-to-staging
+    runs-on: windows-latest
+    environment: Production
+    steps:
+
+    - uses: actions/checkout@main  
+    
+    - name: Install Nuget
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-version: ${{env.NUGET_VERSION}}
+        
+    - name: NuGet to restore dependencies as well as project-specific tools that are specified in the project file
+      run: nuget restore
+  
+    - name: Build application in release configuration
+      run: dotnet build --no-restore -c Release 
+    
+    - name: Publish artifacts in release configuration
+      run: dotnet publish --no-build -c Release -o ./published
+      
+    - name: Deploy application to production environment
+      uses: azure/webapps-deploy@v2
+      with: 
+        app-name: ${{ env.AZURE_PRD_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }} 
+        package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}'
+  
+    
+      
+      
