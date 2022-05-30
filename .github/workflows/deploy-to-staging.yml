@@ -1,43 +1,17 @@
-name: Deploy to Staging
-
-on:  
-  workflow_run:
-    workflows: ["Build & Deploy"]
-    types:
-      - completed
-
-env:
-  AZURE_WEBAPP_NAME: staging-bosengineers    # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: './published'      # set this to the path to your web app project, defaults to the repository root
-  NUGET_VERSION: '5.8.x'           # set this to the dot net version to use
-
+name: Log Levels
+on: 
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
 jobs:
-  build-and-deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: windows-latest
-    environment: Staging
+  printInputs:
+    runs-on: ubuntu-latest
     steps:
-
-    - uses: actions/checkout@main  
-    
-    - name: Install Nuget
-      uses: nuget/setup-nuget@v1
-      with:
-        nuget-version: ${{ env.NUGET_VERSION}}
-    - name: NuGet to restore dependencies as well as project-specific tools that are specified in the project file
-      run: nuget restore
-  
-    - name: Run Build
-      run: dotnet build --no-restore -c Release 
-    
-    - name: Publish
-      run: dotnet publish --no-build -c Release -o ./published
-      
-    - name: 'Run Azure webapp deploy action using publish profile credentials'
-      uses: azure/webapps-deploy@v2
-      with: 
-        app-name: ${{ env.AZURE_WEBAPP_NAME }} # Replace with your app name
-        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }} # Define secret variable in repository settings as per action documentation
-        package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}'
-    
-    
+    - run: |
+        echo "Log level: ${{ github.event.inputs.logLevel }}"
+        echo "Tags: ${{ github.event.inputs.tags }}" 
